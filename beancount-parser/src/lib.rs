@@ -45,7 +45,8 @@ macro_rules! construct {
         construct!(@fields, $builder, $span, $pairs, $($rest)*)
     };
     ( @fields, $builder:ident, $span:ident, $pairs:ident, $field:ident ?= $f:expr; $($rest:tt)* ) => {
-        let $builder = $builder.$field($pairs.next().map($f));
+        let pair = $pairs.next().map($f).transpose()?;
+        let $builder = $builder.$field(pair);
         construct!(@fields, $builder, $span, $pairs, $($rest)*)
     };
     ( @fields, $builder:ident, $span:ident, $pairs:ident, $field:ident := $val:expr; $($rest:tt)* ) => {
@@ -188,7 +189,7 @@ fn plugin_directive<'i>(directive: Pair<'i, Rule>) -> ParseResult<bc::Directive<
     Ok(bc::Directive::Plugin(construct! {
         bc::Plugin: directive => {
             module = get_quoted_str;
-            config = get_quoted_str;
+            config ?= get_quoted_str;
             source := Some(source);
         }
     }))
@@ -990,6 +991,10 @@ mod tests {
         parse_ok!(
             plugin,
             "plugin \"beancount.plugins.module_name\" \"configuration data\"\n"
+        );
+        parse_ok!(
+            plugin,
+            "plugin \"beancount.plugins.module_name\"\n"
         );
     }
 
