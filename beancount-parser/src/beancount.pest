@@ -108,7 +108,7 @@ query = { date ~ "query" ~ quoted_str ~ quoted_str ~ eol_kv_list }
 // 2014-05-05 txn "Cafe Mogador" "Lamb tagine with wine"
 //     Liabilities:CreditCard:CapitalOne         -37.45 USD
 //     Expenses:Restaurant
-transaction = { date ~ txn_flag ~ txn_strings ~ tags_links? ~ eol_posting_or_kv_list }
+transaction = { date ~ txn_flag ~ txn_strings? ~ tags_links? ~ eol_posting_or_kv_list }
 txn_flag = @{ flag_okay | flag_warning | flag_padding | flag_summarize | flag_transfer | flag_conversions | flag_unrealized | flag_returns | flag_merging | flag_forecasted }
 // Transactions that have been checked.
 flag_okay = @{ "*" | "txn" }

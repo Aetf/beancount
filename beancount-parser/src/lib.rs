@@ -387,16 +387,17 @@ fn transaction_directive<'i>(
             date = date;
             flag = flag;
             let (payee, narration) = from pair {
-                let span = pair.as_span();
-                let mut inner = pair.into_inner();
-                let first = inner.next().map(get_quoted_str)
-                    .transpose()?
-                    .ok_or_else(|| ParseError::invalid_state_with_span("payee or narration", span))?;
-                let second = inner.next().map(get_quoted_str);
-                if let Some(second) = second {
-                    (Some(first), second?)
+                if pair.as_rule() != Rule::txn_strings {
+                    // When completely missing, narration is set to empty
+                    (None, "".to_owned().into())
                 } else {
-                    (None, first)
+                    let span = pair.as_span();
+                    let mut inner = pair.into_inner().rev().map(get_quoted_str);
+                    let narration = inner.next()
+                        .transpose()?
+                        .ok_or_else(|| ParseError::invalid_state_with_span("payee or narration", span))?;
+                    let payee = inner.next().transpose()?;
+                    (payee, narration)
                 }
             };
             payee := payee;
@@ -692,7 +693,7 @@ fn meta_kv_pair<'i>(
     Ok((key.into(), value))
 }
 
-fn get_quoted_str<'i>(pair: Pair<'i, Rule>) -> ParseResult<Cow<'i, str>> {
+fn get_quoted_str(pair: Pair<Rule>) -> ParseResult<Cow<str>> {
     debug_assert!(pair.as_rule() == Rule::quoted_str);
     let span = pair.as_span();
     Ok(pair
@@ -1075,6 +1076,16 @@ mod tests {
             indoc!(
                 "
         2014-05-05 txn \"Cafe Mogador\" | \"Lamb tagine with wine\"
+        "
+            )
+        );
+
+        // Missing strings altogether
+        parse_ok!(
+            transaction,
+            indoc!(
+                "
+        2014-05-05 * #tag
         "
             )
         );
