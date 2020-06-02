@@ -650,12 +650,12 @@ fn account<'i>(pair: Pair<'i, Rule>, state: &ParseState) -> ParseResult<bc::Acco
     Ok(bc::Account::builder().ty(account_type).parts(parts).build())
 }
 
-fn as_str<'i>(pair: Pair<'i, Rule>) -> ParseResult<&'i str> {
-    Ok(pair.as_str())
+fn as_str(pair: Pair<Rule>) -> ParseResult<Cow<str>> {
+    Ok(pair.as_str().into())
 }
 
-fn date<'i>(pair: Pair<'i, Rule>) -> ParseResult<&'i str> {
-    Ok(pair.as_str())
+fn date(pair: Pair<Rule>) -> ParseResult<bc::Date> {
+    Ok(pair.as_str().into())
 }
 
 fn meta_kv<'i>(pair: Pair<'i, Rule>, state: &ParseState) -> ParseResult<bc::metadata::Meta<'i>> {
