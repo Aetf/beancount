@@ -93,7 +93,7 @@ fn optional_rule<'i>(rule: Rule, pairs: &mut Pairs<'i, Rule>) -> Option<Pair<'i,
     }
 }
 
-pub fn parse<'i>(input: &'i str) -> ParseResult<bc::Ledger<'i>> {
+pub fn parse(input: &str) -> ParseResult<bc::Ledger> {
     let parsed = BeancountParser::parse(Rule::file, &input)?
         .next()
         .ok_or_else(|| ParseError::invalid_state("non-empty parse result"))?;
@@ -173,7 +173,7 @@ fn directive<'i>(directive: Pair<'i, Rule>, state: &ParseState) -> ParseResult<b
     Ok(dir)
 }
 
-fn option_directive<'i>(directive: Pair<'i, Rule>) -> ParseResult<bc::Directive<'i>> {
+fn option_directive(directive: Pair<Rule>) -> ParseResult<bc::Directive> {
     let source = directive.as_str();
     Ok(bc::Directive::Option(construct! {
         bc::BcOption: directive => {
@@ -184,7 +184,7 @@ fn option_directive<'i>(directive: Pair<'i, Rule>) -> ParseResult<bc::Directive<
     }))
 }
 
-fn plugin_directive<'i>(directive: Pair<'i, Rule>) -> ParseResult<bc::Directive<'i>> {
+fn plugin_directive(directive: Pair<Rule>) -> ParseResult<bc::Directive> {
     let source = directive.as_str();
     Ok(bc::Directive::Plugin(construct! {
         bc::Plugin: directive => {
@@ -217,7 +217,7 @@ fn custom_directive<'i>(
     }))
 }
 
-fn include_directive<'i>(directive: Pair<'i, Rule>) -> ParseResult<bc::Directive<'i>> {
+fn include_directive(directive: Pair<Rule>) -> ParseResult<bc::Directive> {
     let source = directive.as_str();
     Ok(bc::Directive::Include(construct! {
         bc::Include: directive => {
@@ -501,12 +501,12 @@ fn posting<'i>(pair: Pair<'i, Rule>, state: &ParseState) -> ParseResult<bc::Post
     })
 }
 
-fn num_expr<'i>(pair: Pair<'i, Rule>) -> ParseResult<Decimal> {
+fn num_expr(pair: Pair<Rule>) -> ParseResult<Decimal> {
     debug_assert!(pair.as_rule() == Rule::num_expr);
     PREC_CLIMBER.climb(pair.into_inner(), term, reduce_num_expr)
 }
 
-fn term<'i>(pair: Pair<'i, Rule>) -> ParseResult<Decimal> {
+fn term(pair: Pair<Rule>) -> ParseResult<Decimal> {
     debug_assert!(pair.as_rule() == Rule::term);
     let span = pair.as_span();
     let mut term_parts = pair.into_inner();
@@ -528,9 +528,9 @@ fn term<'i>(pair: Pair<'i, Rule>) -> ParseResult<Decimal> {
     Ok(num_expr)
 }
 
-fn reduce_num_expr<'i>(
+fn reduce_num_expr(
     lhs: ParseResult<Decimal>,
-    op: Pair<'i, Rule>,
+    op: Pair<Rule>,
     rhs: ParseResult<Decimal>,
 ) -> ParseResult<Decimal> {
     let lhs = lhs?;
@@ -544,7 +544,7 @@ fn reduce_num_expr<'i>(
     })
 }
 
-fn amount<'i>(pair: Pair<'i, Rule>) -> ParseResult<bc::Amount<'i>> {
+fn amount(pair: Pair<Rule>) -> ParseResult<bc::Amount> {
     debug_assert!(pair.as_rule() == Rule::amount);
     Ok(construct! {
         bc::Amount: pair => {
@@ -554,7 +554,7 @@ fn amount<'i>(pair: Pair<'i, Rule>) -> ParseResult<bc::Amount<'i>> {
     })
 }
 
-fn incomplete_amount<'i>(pair: Pair<'i, Rule>) -> ParseResult<bc::IncompleteAmount<'i>> {
+fn incomplete_amount(pair: Pair<Rule>) -> ParseResult<bc::IncompleteAmount> {
     debug_assert!(pair.as_rule() == Rule::incomplete_amount);
     Ok(construct! {
         bc::IncompleteAmount: pair => {
@@ -572,7 +572,7 @@ fn incomplete_amount<'i>(pair: Pair<'i, Rule>) -> ParseResult<bc::IncompleteAmou
     })
 }
 
-fn cost_spec<'i>(pair: Pair<'i, Rule>) -> ParseResult<bc::CostSpec<'i>> {
+fn cost_spec(pair: Pair<Rule>) -> ParseResult<bc::CostSpec> {
     debug_assert!(pair.as_rule() == Rule::cost_spec);
     let mut amount = (None, None, None);
     let mut date_ = None;
@@ -608,7 +608,7 @@ fn cost_spec<'i>(pair: Pair<'i, Rule>) -> ParseResult<bc::CostSpec<'i>> {
         .build())
 }
 
-fn price_annotation<'i>(pair: Pair<'i, Rule>) -> ParseResult<(bool, bc::IncompleteAmount<'i>)> {
+fn price_annotation(pair: Pair<Rule>) -> ParseResult<(bool, bc::IncompleteAmount)> {
     debug_assert!(pair.as_rule() == Rule::price_annotation);
     let span = pair.as_span();
     let inner = pair
@@ -704,13 +704,13 @@ fn get_quoted_str(pair: Pair<Rule>) -> ParseResult<Cow<str>> {
         .into())
 }
 
-fn flag<'i>(pair: Pair<'i, Rule>) -> ParseResult<bc::Flag> {
+fn flag(pair: Pair<Rule>) -> ParseResult<bc::Flag> {
     Ok(bc::Flag::from(pair.as_str()))
 }
 
-fn compound_amount<'i>(
-    pair: Pair<'i, Rule>,
-) -> ParseResult<(Option<Decimal>, Option<Decimal>, Option<Cow<'i, str>>)> {
+fn compound_amount(
+    pair: Pair<Rule>,
+) -> ParseResult<(Option<Decimal>, Option<Decimal>, Option<Cow<str>>)> {
     let mut number_per = None;
     let mut number_total = None;
     let mut currency = None;
